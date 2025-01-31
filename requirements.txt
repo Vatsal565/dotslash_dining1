@@ -1,0 +1,9 @@
+flask
+datetime
+pandas
+json
+cv2
+pyzbar
+functools
+numpy
+flask_login

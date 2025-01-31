@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}QR Code Scanner{% endblock %}
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
+{% endblock %}
+{% block content %}
+<h2>QR Code Scanner</h2>
+<div id="reader"></div>
+
+<div class="file-upload">
+    <h3>Or upload QR code image</h3>
+    <input type="file" id="qr-input-file" accept="image/*" class="btn">
+</div>
+
+<div id="result"></div>
+
+<script>
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('result').innerHTML = `<div class="success">QR Code detected: ${decodedText}</div>`;
+
+        fetch('/scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                qr_data: decodedText
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('result').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    document.getElementById('result').innerHTML = `<div class="success">Successfully recorded ${data.meal}</div>`;
+                }
+            });
+    }
+
+    function onScanFailure(error) {
+        console.warn(`Code scan error = ${error}`);
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: { width: 250, height: 250 } }
+    );
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+    document.getElementById('qr-input-file').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        let formData = new FormData();
+        formData.append('image', file);
+
+        fetch('/scan', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('result').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                } else {
+                    document.getElementById('result').innerHTML = `<div class="success">Successfully recorded ${data.meal}</div>`;
+                }
+            });
+    });
+</script>
+{% endblock %}
